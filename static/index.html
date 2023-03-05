@@ -60,13 +60,10 @@ function sendJSONXMLHTTPRequest(url, objects, callback) { // assume objects is a
     // Remember to use application/json !
 }
 
-var lastFetched = null;
-
-function getJSON(url, callback) { // assume objects is a json object
+function getJSON(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('get', url);
     xhr.setRequestHeader("Accept", "application/json");
-    xhr.
 
     xhr.onreadystatechange = function () {
         if (xhr.readyState==4) {
@@ -88,20 +85,26 @@ function getJSON(url, callback) { // assume objects is a json object
     xhr.send(null)
 }
 
+var user = null;
+
+getJSON('/user', function(jsonResponse){
+    user = JSON.parse(jsonResponse)["id"];
+});
 
 world = {};
 
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
     with(context) {
-        beginPath();              
+        beginPath();
         lineWidth = 3;
         var x = entity["x"];
         var y = entity["y"];
         //moveTo(x,y);
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
+        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);
+        fill()
         stroke();
     }
 }
@@ -125,12 +128,28 @@ function clearFrame() {
 
 }
 
+function drawLine(context, entity) {
+    context.beginPath();
+    context.lineWidth = entity["radius"] * 2.4
+    context.strokeStyle = "green";
+    context.moveTo(entity["last"]["x"], entity["last"]["y"]);
+    context.lineTo(entity["x"], entity["y"]);
+    context.stroke();
+}
+
 // This actually draws the frame
 function renderFrame() {
     clearFrame();
     for (var key in world) {
         var entity = world[key];
-        drawCircle(context,prepEntity(entity));
+        preppedEntity = prepEntity(entity)
+        drawCircle(context, preppedEntity);
+
+        //draw line between two points if last exists
+        if (entity["last"]) {
+            drawLine(context, preppedEntity)
+        }
+        
     }
 }
 
@@ -180,9 +199,11 @@ function addEntity(entity, data) {
 var counter = 0;
 function addEntityWithoutName(data) {
     //var name = "X"+Math.floor((Math.random()*100)+1);
-    var name = "X"+(counter++)%1000;
+    var name = user+(counter++); // TODO: Instead of mod 1000, each user will get some sort of identifier (could store something on the server side) + counter, so that other user's drawings are not overwritten
     addEntity(name,data);
 }
+
+var lastPosition = null;
 
 // canvas + mouse/touch is complicated 
 // I give you this because well the mouse/touch stuff is a total
@@ -223,6 +244,8 @@ mouse = (function() {
 	        self.clicked = 1;
                 self.callListeners(self.mousedowners,x,y,self.clicked,e);
                 //addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+                lastPosition = {'x': x, 'y': y}
+
             }
         },
         mouseup: function(e) {
@@ -236,6 +259,7 @@ mouse = (function() {
 	        self.clicked = 0;
                 self.selected = -1;
                 self.callListeners(self.mouseuppers,x,y,self.clicked,e);
+                lastPosition = null
                 //addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
             }
         },
@@ -256,9 +280,10 @@ mouse = (function() {
 	        if (self.clicked != 0) {
 	            //self.squeakin(x,y);
                     self.callListeners(self.mousedraggers,x,y,self.clicked,e);
+                    lastPosition = {'x': x, 'y': y} // this allows us to draw lines between segments
 	        }
                 self.callListeners(self.mousemovers,x,y,self.clicked,e);
-            }            
+            }
 	},
 	touchmove: function(e) {
             self.lasttouch = e;                                         
@@ -283,16 +308,16 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'blue', 'radius': 50, 'last': null});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'red', 'radius': 50, 'last':lastPosition});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
     addEntityWithoutName({'x':x,'y':y,'colour':'green',
-                          'radius':10});
+                          'radius':10, 'last': lastPosition});
 });
 
 function update() {
@@ -300,18 +325,18 @@ function update() {
     // get world, check what the user changed and update those, check what they don't have and add those to current 
 
     getJSON('/world', function(jsonResponse){
-        world = JSON.parse(jsonResponse);
-        lastFetched = new Date().toUTCString();
+        json = JSON.parse(jsonResponse);
+        world = Object.assign({}, world, json);
         drawNextFrame();
+        console.log(json)
+        console.log(world)
     });
 
     drawFrame();
 }
 
 // 30 frames per second
-setInterval( update, 1000/50.0);
-
-
+setInterval( update, 1000/30.0);
 
     </script>
 </body>

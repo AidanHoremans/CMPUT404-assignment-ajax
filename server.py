@@ -24,8 +24,10 @@
 import flask
 from flask import Flask, request, redirect, url_for, Response
 import json
+import uuid
 app = Flask(__name__)
 app.debug = True
+anonymous_user = 0
 
 # An example world
 # {
@@ -53,8 +55,6 @@ class World:
     
     def world(self):
         return self.space
-
-lastModified = None
 
 # you can test your webservice from the commandline
 # curl -v   -H "Content-Type: application/json" -X PUT http://127.0.0.1:5000/entity/X -d '{"x":1,"y":1}' 
@@ -115,6 +115,14 @@ def clear():
     if request.method == 'POST':
         myWorld.clear()
         return Response(json.dumps(myWorld.world()), status=200, mimetype='application/json')
+    
+    return None
+
+@app.route("/user", methods=['GET'])
+def user():
+    '''GET the current user val'''
+    if request.method == 'GET':
+        return Response(json.dumps({"id": str(uuid.uuid4())}), status=200, mimetype='application/json')
     
     return None
 
