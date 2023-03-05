@@ -81,7 +81,7 @@ def hello():
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    if request.method == 'POST': #update an existing entity
+    if request.method == 'POST': #update an existing entity?
         pass
 
     elif request.method == 'PUT': #add a new entity
@@ -89,7 +89,7 @@ def update(entity):
         myWorld.set(entity, entity_body)
         return Response(json.dumps(myWorld.get(entity)), status=200, mimetype='application/json')
 
-    return None
+    return Response(status=405)
 
 @app.route("/world", methods=['POST','GET'])    
 def world():
@@ -99,7 +99,7 @@ def world():
     elif request.method == 'POST':
         #updates the world object? -> unsure what to do with this
         pass
-    return None
+    return Response(status=405)
     
 
 @app.route("/entity/<entity>")
@@ -107,16 +107,17 @@ def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
     if request.method == 'GET':
         return Response(json.dumps(myWorld.get(entity)), status=200, mimetype='application/json')
-    return None
+    return Response(status=405)
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
+    print('HERE')
     '''Clear the world out!'''
     if request.method == 'POST':
         myWorld.clear()
         return Response(json.dumps(myWorld.world()), status=200, mimetype='application/json')
     
-    return None
+    return Response(status=405)
 
 @app.route("/user", methods=['GET'])
 def user():
@@ -124,7 +125,7 @@ def user():
     if request.method == 'GET':
         return Response(json.dumps({"id": str(uuid.uuid4())}), status=200, mimetype='application/json')
     
-    return None
+    return Response(status=405)
 
 if __name__ == "__main__":
     app.run(port=8000)

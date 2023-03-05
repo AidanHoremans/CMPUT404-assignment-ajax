@@ -1,0 +1,43 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+* {
+    background-color: black;
+}
+
+.canvas-options {
+    display: flex;
+    flex-wrap: nowrap;
+    background-color: grey;
+    padding: 0.5em;
+}
+
+.canvas-options div {
+    background-color: inherit;
+}
+
+.canvas-options label {
+    color: white;
+    background-color: inherit;
+}
+
+.canvas-options button {
+    background-color: white;
+}
+
+.brush-options {
+    margin-left: 1em;
+    border-left: 1;
+    border-width: 1pt;
+    border-color: black;
+}
+
+.clear {
+    margin-inline: 1em;
+}
+
+content {
+    flex: 1;
+}

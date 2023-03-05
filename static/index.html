@@ -2,6 +2,7 @@
 <html> 
   <head> 
     <title>AJAX Assignment</title> 
+    <link rel="stylesheet" href="index.css">
     <meta charset="utf-8" /> 
     <meta content='width=device-width; height=device-height; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;' name='viewport' />
     <meta name="viewport" content="width=device-width" />
@@ -22,8 +23,25 @@
     "/>
     <script src="json2.js"></script>
   </head> 
-  <body bgcolor="black" height="100%" width="100%"> 
-    <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent;"></canvas> 
+  <body height="100%" width="100%"> 
+    <canvas id="c" width="90%" height="100%" style="-webkit-tap-highlight-color: transparent; z-index: 0;"></canvas> 
+    <div class="canvas-options">
+        <div class="colour-options">
+            <input type="radio" name="colours" id="gr" value="green" checked="checked">
+            <label for="gr" style="color: white;">Green</label>
+            <input type="radio" name="colours" id="re" value="red">
+            <label for="re" style="color: white;">Red</label>
+            <input type="radio" name="colours" id="bl" value="blue">
+            <label for="bl" style="color: white;">Blue</label>
+        </div>
+        <div class="brush-options">
+            <input type="range" min="1" max="30" value="10" class="slider" id="brush-size">
+        </div>
+        <div>
+            <button class="clear" onclick="clearCanvas()">Clear Canvas</button>
+        </div>
+    </div>
+
     <script>
 var canvas = document.getElementById('c');
 var host = window.location.host;
@@ -31,12 +49,17 @@ var context = canvas.getContext("2d");
 var W = canvas.width  = window.innerWidth-6;
 var H = canvas.height = window.innerHeight-50;
 
+function clearCanvas(){
+    sendJSONXMLHTTPRequest('POST', '/clear', null, function(){})
+}
 
-function sendJSONXMLHTTPRequest(url, objects, callback) { // assume objects is a json object
+function sendJSONXMLHTTPRequest(requestType, url, objects, callback) { // assume objects is a json object
     var xhr = new XMLHttpRequest();
 
-    xhr.open('PUT', url);
-    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.open(requestType, url);
+    if (objects){
+        xhr.setRequestHeader("Content-Type", "application/json");
+    }
     xhr.setRequestHeader("Accept", "application/json");
 
     xhr.onreadystatechange = function () {
@@ -53,12 +76,14 @@ function sendJSONXMLHTTPRequest(url, objects, callback) { // assume objects is a
             }
         }
     };
-    //XXX: POST to a URL
+
     xhr.send(objects);
 
     //XXX: set the mimetype and the accept headers!
     // Remember to use application/json !
 }
+
+
 
 function getJSON(url, callback) {
     var xhr = new XMLHttpRequest();
@@ -103,7 +128,7 @@ function drawCircle(context,entity) {
         //moveTo(x,y);
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"]) ? entity["radius"] : 50, 0, 2.0 * Math.PI, false);
+        arc(x, y, entity["radius"], 0, 2.0 * Math.PI, false);
         fill()
         stroke();
     }
@@ -125,13 +150,12 @@ function clearFrame() {
 	fillStyle = "#000";
 	fillRect(0,0,W,H);
     }
-
 }
 
 function drawLine(context, entity) {
     context.beginPath();
     context.lineWidth = entity["radius"] * 2
-    context.strokeStyle = "green";
+    context.strokeStyle = entity["colour"];
     context.moveTo(entity["last"]["x"], entity["last"]["y"]);
     context.lineTo(entity["x"], entity["y"]);
     context.stroke();
@@ -149,7 +173,6 @@ function renderFrame() {
         if (entity["last"]) {
             drawLine(context, preppedEntity)
         }
-        
     }
 }
 
@@ -193,17 +216,28 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just  modified!
-    sendJSONXMLHTTPRequest('/entity/' + entity, JSON.stringify(data), function(response){});
+    sendJSONXMLHTTPRequest('PUT', '/entity/' + entity, JSON.stringify(data), function(response){});
 }
 
 var counter = 0;
 function addEntityWithoutName(data) {
     //var name = "X"+Math.floor((Math.random()*100)+1);
     var name = user+(counter++); // TODO: Instead of mod 1000, each user will get some sort of identifier (could store something on the server side) + counter, so that other user's drawings are not overwritten
+    var colour = document.querySelector("input[name=colours]:checked").value;
+    
+    data["colour"] = colour;
+
+    var size = document.querySelector("input[id=brush-size]");
+
+    console.log(size.value);
+
+    data["radius"] = size.value;
+
     addEntity(name,data);
 }
 
 var lastPosition = null;
+var chosenColour = "blue";
 
 // canvas + mouse/touch is complicated 
 // I give you this because well the mouse/touch stuff is a total
@@ -308,16 +342,15 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue', 'radius': 50, 'last': null});
+    addEntityWithoutName({'x':x,'y':y, 'last': null});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red', 'radius': 50, 'last':lastPosition});
+    addEntityWithoutName({'x':x,'y':y, 'last':lastPosition});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
-                          'radius':10, 'last': lastPosition});
+    addEntityWithoutName({'x':x,'y':y, 'last': lastPosition});
 });
 
 function update() {
@@ -325,11 +358,20 @@ function update() {
     // get world, check what the user changed and update those, check what they don't have and add those to current 
 
     getJSON('/world', function(jsonResponse){
+
         json = JSON.parse(jsonResponse);
-        console.log(json == {})
-        if (json == {}){
-            console.log("HERE")
-            world = {}
+
+        var itemsToDraw = {};
+
+        for (item in json){ // only draw items we don't already have drawn!
+            if (!(item in world)){
+                world[item = ]
+                itemsToDraw[item] = json[item];
+            }
+        }
+
+        if (JSON.stringify(json) == JSON.stringify({})){
+            world = {};
         } else {
             world = Object.assign({}, world, json);
         }
