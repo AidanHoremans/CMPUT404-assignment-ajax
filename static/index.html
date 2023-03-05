@@ -32,14 +32,20 @@ var W = canvas.width  = window.innerWidth-6;
 var H = canvas.height = window.innerHeight-50;
 
 
-function sendJSONXMLHTTPRequest(url, objects, callback) {
+function sendJSONXMLHTTPRequest(url, objects, callback) { // assume objects is a json object
     var xhr = new XMLHttpRequest();
+
+    xhr.open('PUT', url);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Accept", "application/json");
+
     xhr.onreadystatechange = function () {
         if (xhr.readyState==4) {
             try {
                 if (xhr.status==200) {
                     //XXX: parse some JSON from the request!
                     //XXX: Pass the data to the callback!
+                    callback(xhr.responseText);
                 }
             } 
             catch(e) {
@@ -48,8 +54,38 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
         }
     };
     //XXX: POST to a URL
+    xhr.send(objects);
+
     //XXX: set the mimetype and the accept headers!
     // Remember to use application/json !
+}
+
+var lastFetched = null;
+
+function getJSON(url, callback) { // assume objects is a json object
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url);
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState==4) {
+            try {
+                if (xhr.status==200) {
+                    //XXX: parse some JSON from the request!
+                    //XXX: Pass the data to the callback!
+                    callback(xhr.responseText);
+                }
+                else if (xhr.status==304){
+                    callback(null); //unchanged!
+                }
+            }
+            catch(e) {
+                alert('Error: ' + e.name);
+            }
+        }
+    };
+    xhr.send(null)
 }
 
 
@@ -66,7 +102,7 @@ function drawCircle(context,entity) {
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
         arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        stroke();
     }
 }
 
@@ -138,13 +174,13 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just  modified!
-
+    sendJSONXMLHTTPRequest('/entity/' + entity, JSON.stringify(data), function(response){});
 }
 
 var counter = 0;
 function addEntityWithoutName(data) {
     //var name = "X"+Math.floor((Math.random()*100)+1);
-    var name = "X"+(counter++)%100;
+    var name = "X"+(counter++)%1000;
     addEntity(name,data);
 }
 
@@ -259,14 +295,21 @@ mouse.mousedraggers.push(function(x,y,clicked,e) {
                           'radius':10});
 });
 
-
 function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
+    // get world, check what the user changed and update those, check what they don't have and add those to current 
+
+    getJSON('/world', function(jsonResponse){
+        world = JSON.parse(jsonResponse);
+        lastFetched = new Date().toUTCString();
+        drawNextFrame();
+    });
+
     drawFrame();
 }
 
 // 30 frames per second
-setInterval( update, 1000/30.0);
+setInterval( update, 1000/50.0);
 
 
 

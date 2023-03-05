@@ -22,7 +22,7 @@
 
 
 import flask
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for, Response
 import json
 app = Flask(__name__)
 app.debug = True
@@ -37,13 +37,13 @@ class World:
     def __init__(self):
         self.clear()
         
-    def update(self, entity, key, value):
+    def update(self, entity, key, value): # if a pre-existing point is drawn on, we override it
         entry = self.space.get(entity,dict())
         entry[key] = value
         self.space[entity] = entry
 
     def set(self, entity, data):
-        self.space[entity] = data
+        self.space[entity] = data # create a new entity
 
     def clear(self):
         self.space = dict()
@@ -54,10 +54,12 @@ class World:
     def world(self):
         return self.space
 
+lastModified = None
+
 # you can test your webservice from the commandline
 # curl -v   -H "Content-Type: application/json" -X PUT http://127.0.0.1:5000/entity/X -d '{"x":1,"y":1}' 
 
-myWorld = World()          
+myWorld = World()
 
 # I give this to you, this is how you get the raw body/data portion of a post in flask
 # this should come with flask but whatever, it's not my project.
@@ -74,27 +76,47 @@ def flask_post_json():
 @app.route("/")
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    return (redirect(url_for('static', filename='index.html')))
 
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
+    if request.method == 'POST': #update an existing entity
+        pass
+
+    elif request.method == 'PUT': #add a new entity
+        entity_body = flask_post_json()
+        myWorld.set(entity, entity_body)
+        return Response(json.dumps(myWorld.get(entity)), status=200, mimetype='application/json')
+
     return None
 
 @app.route("/world", methods=['POST','GET'])    
 def world():
     '''you should probably return the world here'''
+    if request.method == 'GET':
+        return Response(json.dumps(myWorld.world()), status=200, mimetype='application/json')
+    elif request.method == 'POST':
+        #updates the world object? -> unsure what to do with this
+        pass
     return None
+    
 
-@app.route("/entity/<entity>")    
+@app.route("/entity/<entity>")
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
+    if request.method == 'GET':
+        return Response(json.dumps(myWorld.get(entity)), status=200, mimetype='application/json')
     return None
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
     '''Clear the world out!'''
+    if request.method == 'POST':
+        myWorld.clear()
+        return Response(json.dumps(myWorld.world()), status=200, mimetype='application/json')
+    
     return None
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=8000)
