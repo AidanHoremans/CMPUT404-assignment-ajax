@@ -97,13 +97,13 @@ world = {};
 function drawCircle(context,entity) {
     with(context) {
         beginPath();
-        lineWidth = 3;
+        lineWidth = 0.01; // thinner linewidth means easier matching with line thickness for drawing lines -> if circle line width is too thick, the lines look bumpy and choppy
         var x = entity["x"];
         var y = entity["y"];
         //moveTo(x,y);
         fillStyle = entity["colour"];
         strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);
+        arc(x, y, (entity["radius"]) ? entity["radius"] : 50, 0, 2.0 * Math.PI, false);
         fill()
         stroke();
     }
@@ -130,7 +130,7 @@ function clearFrame() {
 
 function drawLine(context, entity) {
     context.beginPath();
-    context.lineWidth = entity["radius"] * 2.4
+    context.lineWidth = entity["radius"] * 2
     context.strokeStyle = "green";
     context.moveTo(entity["last"]["x"], entity["last"]["y"]);
     context.lineTo(entity["x"], entity["y"]);
@@ -326,10 +326,15 @@ function update() {
 
     getJSON('/world', function(jsonResponse){
         json = JSON.parse(jsonResponse);
-        world = Object.assign({}, world, json);
+        console.log(json == {})
+        if (json == {}){
+            console.log("HERE")
+            world = {}
+        } else {
+            world = Object.assign({}, world, json);
+        }
+
         drawNextFrame();
-        console.log(json)
-        console.log(world)
     });
 
     drawFrame();
