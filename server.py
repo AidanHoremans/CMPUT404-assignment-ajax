@@ -39,7 +39,7 @@ class World:
     def __init__(self):
         self.clear()
         
-    def update(self, entity, key, value): # if a pre-existing point is drawn on, we override it
+    def update(self, entity, key, value): # allows us to update values in a pre-existing entity
         entry = self.space.get(entity,dict())
         entry[key] = value
         self.space[entity] = entry
@@ -82,8 +82,11 @@ def hello():
 def update(entity):
     '''update the entities via this interface'''
     if request.method == 'POST': #update an existing entity?
-        pass
+        entity_body = flask_post_json()
+        for key in entity_body:
+            myWorld.update(entity, key, entity_body) #update each key to match the value. If the entity doesn't exist it creates it -> what is the point? allows only a few keys to get updated?
 
+        return Response(json.dumps(myWorld.get(entity)), status=200, mimetype='application/json')
     elif request.method == 'PUT': #add a new entity
         entity_body = flask_post_json()
         myWorld.set(entity, entity_body)
