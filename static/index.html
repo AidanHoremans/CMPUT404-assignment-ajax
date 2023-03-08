@@ -23,17 +23,18 @@
     "/>
     <script src="json2.js"></script>
   </head> 
-  <body height="100%" width="100%"> 
-    <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent; z-index: 0;"></canvas> 
+  <body> 
+    <canvas id="c" width="100%" height="80%" style="-webkit-tap-highlight-color: transparent; z-index: 0;"></canvas> 
     <div class="canvas-options">
         <div class="colour-options">
-            <input type="color" id="color-opt" value="#ffffff">
+            <input type="color" id="color-opt" value="#ff0000">
             <label for="color-opt">Brush Color</label>
         </div>
         <div class="brush-options">
             <input type="range" min="1" max="30" value="10" class="slider" id="brush-size">
+            <label for="brush-size" id="brush-size-label">Brush Size</label>
         </div>
-        <div>
+        <div class="clear-button">
             <button class="clear" onclick="clearCanvas()">Clear Canvas</button>
         </div>
     </div>
@@ -47,7 +48,7 @@
 var canvas = document.getElementById('c');
 var host = window.location.host;
 var context = canvas.getContext("2d");
-var W = canvas.width  = window.innerWidth-6;
+var W = canvas.width  = window.innerWidth;
 var H = canvas.height = window.innerHeight-50;
 
 function clearCanvas(){
@@ -363,6 +364,8 @@ function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
     // get world, check what the user changed and update those, check what they don't have and add those to current 
 
+    drawFrame();
+
     getJSON('/world', function(jsonResponse){
 
         worldHasValue = false;
@@ -381,8 +384,6 @@ function update() {
             clearFrame();
         }
     });
-
-    drawFrame();
 }
 
 // 30 frames per second

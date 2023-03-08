@@ -118,7 +118,6 @@ def get_entity(entity):
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
-    print('HERE')
     '''Clear the world out!'''
     if request.method == 'POST':
         myWorld.clear()

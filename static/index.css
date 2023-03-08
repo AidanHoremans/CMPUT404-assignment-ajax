@@ -36,8 +36,49 @@ body {
 
 .clear {
     margin-inline: 1em;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    text-align: center;
+    padding: 0.5em;
+    
+}
+.clear-button {
+    justify-content: right;
+}
+
+.clear:hover {
+    background-color: rgb(228, 228, 228);
+}
+
+.clear:active {
+    background-color: lightgrey;
 }
 
 content {
     flex: 1;
+}
+
+#brush-size-label {
+    vertical-align: middle;
+    padding: 0.3em;
+}
+
+.brush-options {
+    display:flex;
+    vertical-align: middle;
+}
+
+#color-opt {
+    background-color: rgb(211, 211, 211);
+    border-radius: 2pt;
+}
+
+#color-opt:hover {
+    background-color: rgb(222, 222, 222);
+}
+
+.canvas-options {
+    justify-content:center;
+    bottom: 0;
 }
