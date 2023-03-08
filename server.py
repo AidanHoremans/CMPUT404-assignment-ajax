@@ -55,6 +55,9 @@ class World:
     
     def world(self):
         return self.space
+    
+    def replace(self, space):
+        self.space = space
 
 # you can test your webservice from the commandline
 # curl -v   -H "Content-Type: application/json" -X PUT http://127.0.0.1:5000/entity/X -d '{"x":1,"y":1}' 
@@ -101,9 +104,10 @@ def world():
         return Response(json.dumps(myWorld.world()), status=200, mimetype='application/json')
     elif request.method == 'POST':
         #updates the world object? -> unsure what to do with this
-        pass
+        space = flask_post_json()
+        myWorld.replace(space)
+        return Response(status=200)
     return Response(status=405)
-    
 
 @app.route("/entity/<entity>")
 def get_entity(entity):

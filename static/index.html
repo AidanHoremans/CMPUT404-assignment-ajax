@@ -27,14 +27,8 @@
     <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent; z-index: 0;"></canvas> 
     <div class="canvas-options">
         <div class="colour-options">
-            <input type="radio" name="colours" id="gr" value="green" checked="checked">
-            <label for="gr" style="color: white;">Green</label>
-            <input type="radio" name="colours" id="re" value="red">
-            <label for="re" style="color: white;">Red</label>
-            <input type="radio" name="colours" id="bl" value="blue">
-            <label for="bl" style="color: white;">Blue</label>
-            <input type="radio" name="colours" id="erase" value="#000">
-            <label for="erase" style="color: white;">Eraser</label>
+            <input type="color" id="color-opt" value="#ffffff">
+            <label for="color-opt">Brush Color</label>
         </div>
         <div class="brush-options">
             <input type="range" min="1" max="30" value="10" class="slider" id="brush-size">
@@ -45,6 +39,11 @@
     </div>
 
     <script>
+
+
+//https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+
+
 var canvas = document.getElementById('c');
 var host = window.location.host;
 var context = canvas.getContext("2d");
@@ -99,9 +98,6 @@ function getJSON(url, callback) {
                     //XXX: parse some JSON from the request!
                     //XXX: Pass the data to the callback!
                     callback(xhr.responseText);
-                }
-                else if (xhr.status==304){
-                    callback(null); //unchanged!
                 }
             }
             catch(e) {
@@ -169,11 +165,14 @@ function drawLine(context, entity) {
 // This actually draws the frame
 function renderFrame() {
     // clearFrame();
-    for (var key in newChanges) {
-        console.log(newChanges[key]);
-        var entity = newChanges[key];
-        world[key] = newChanges[key];
-        delete newChanges[key];
+    console.log(newChanges);
+    drawChanges = newChanges;
+    newChanges = {};
+
+    for (var key in drawChanges) {
+        var entity = drawChanges[key];
+        world[key] = drawChanges[key];
+        delete drawChanges[key];
 
         preppedEntity = prepEntity(entity)
         drawCircle(context, preppedEntity);
@@ -232,15 +231,13 @@ var counter = 0;
 function addEntityWithoutName(data) {
     //var name = "X"+Math.floor((Math.random()*100)+1);
     var name = user+(counter++); // TODO: Instead of mod 1000, each user will get some sort of identifier (could store something on the server side) + counter, so that other user's drawings are not overwritten
-    var colour = document.querySelector("input[name=colours]:checked").value;
-    
+    var colour = document.querySelector("input[id=color-opt]").value;
+
     data["colour"] = colour;
 
-    var size = document.querySelector("input[id=brush-size]");
+    var size = document.querySelector("input[id=brush-size]").value;
 
-    console.log(size.value);
-
-    data["radius"] = size.value;
+    data["radius"] = size;
 
     addEntity(name,data);
 }
@@ -383,9 +380,6 @@ function update() {
             world = {};
             clearFrame();
         }
-        // } else {
-        //     world = Object.assign({}, world, json);
-        // }
     });
 
     drawFrame();
