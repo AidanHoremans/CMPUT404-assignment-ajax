@@ -12,4 +12,6 @@ Contributors / Licensing
 
 Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle.
 
-
+References
+==========
+https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
