@@ -95,10 +95,6 @@ class ServerTestCase(unittest.TestCase):
         for key in self.world:
             self.assertTrue(self.world[key]  == newworld[key], "Key %s" % key)
 
-
         
-        
-        
-
 if __name__ == '__main__':
     unittest.main()

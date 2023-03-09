@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-# Copyright 2013 Abram Hindle
+# Copyright 2023 Abram Hindle, Aidan Horemans
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -75,6 +75,11 @@ def flask_post_json():
         return json.loads(request.data.decode("utf8"))
     else:
         return json.loads(request.form.keys()[0])
+    
+def is_json():
+    if request.mimetype == "application/json":
+        return True
+    return False
 
 @app.route("/")
 def hello():
@@ -85,12 +90,16 @@ def hello():
 def update(entity):
     '''update the entities via this interface'''
     if request.method == 'POST': #update an existing entity?
+        if not is_json():
+            return Response(status=400)
         entity_body = flask_post_json()
         for key in entity_body:
-            myWorld.update(entity, key, entity_body) #update each key to match the value. If the entity doesn't exist it creates it -> what is the point? allows only a few keys to get updated?
-
+            myWorld.update(entity, key, entity_body[key]) #update each key to match the value. If the entity doesn't exist it creates it
         return Response(json.dumps(myWorld.get(entity)), status=200, mimetype='application/json')
+    
     elif request.method == 'PUT': #add a new entity
+        if not is_json():
+            return Response(status=400)
         entity_body = flask_post_json()
         myWorld.set(entity, entity_body)
         return Response(json.dumps(myWorld.get(entity)), status=200, mimetype='application/json')
@@ -104,9 +113,11 @@ def world():
         return Response(json.dumps(myWorld.world()), status=200, mimetype='application/json')
     elif request.method == 'POST':
         #updates the world object? -> unsure what to do with this
+        if not is_json():
+            return Response(status=400)
         space = flask_post_json()
         myWorld.replace(space)
-        return Response(status=200)
+        return Response(json.dumps(myWorld.world()), status=200, mimetype='application/json')
     return Response(status=405)
 
 @app.route("/entity/<entity>")
@@ -134,4 +145,4 @@ def user():
     return Response(status=405)
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(port=5000)
